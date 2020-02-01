@@ -126,14 +126,11 @@ namespace sepd
 					go_next_sequence();
 				}
 			}
-			else {
-				if (delay_msec_ < elapsed) {
-					// down time finished
-					util::print_log(this, this->name_ + "=> expired, reset sequence");
-
-					reset_sequence();
-					next_sequence = current_sequence() + 1;
-				}
+			else if (delay_msec_ < elapsed) {
+				// down time finished
+				util::print_log(this, this->name_ + "=> expired, reset sequence");
+				reset_sequence();
+				next_sequence = current_sequence() + 1;
 			}
 
 			if (is_valid()) {
