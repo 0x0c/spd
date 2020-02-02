@@ -243,6 +243,7 @@ namespace sepd
 
 		void expired(int event, int elapsed)
 		{
+			util::print_log(this, name_ + "=> expired");
 			change_state(state::initial);
 			update_state(action::touch, event, elapsed);
 		}
