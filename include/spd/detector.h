@@ -161,7 +161,7 @@ namespace spd
 					}
 					break;
 				case pattern_t::behaviour::continuous:
-					if (timing.acceptable_pattern(pattern)) {
+					if (timing.acceptable_pattern(pattern) && (timing.start_msec() == 0 || timing.start_msec() > elapsed)) {
 						std::weak_ptr<detector> weak_this = this->shared_from_this();
 						auto duration = std::chrono::milliseconds { timing.end_msec() };
 						std::thread t([=] {
