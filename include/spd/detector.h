@@ -221,11 +221,13 @@ namespace spd
 						change_state(state::invalid);
 					}
 					else if (action == action::accept) {
+						last_update_time_ = std::chrono::system_clock::now();
 						go_next_sequence();
 						change_state(state::checking);
 						update_state(action, event, elapsed);
 					}
 					else if (action == action::reject) {
+						last_update_time_ = std::chrono::system_clock::now();
 						change_state(state::invalid);
 					}
 					break;
@@ -339,7 +341,6 @@ namespace spd
 				default:
 					break;
 			}
-			last_update_time_ = std::chrono::system_clock::now();
 		}
 
 		int current_step()
