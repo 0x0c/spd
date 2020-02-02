@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <functional>
 #include <thread>
@@ -106,7 +107,7 @@ namespace sepd
 
 	private:
 		sequence seq_;
-		state current_state_ = state::initial;
+		state current_state_;
 		unsigned int delay_msec_ = 0;
 		std::chrono::system_clock::time_point last_event_time_;
 		std::vector<event_t> event_table_;
@@ -114,7 +115,8 @@ namespace sepd
 		std::string name_ = "";
 
 		detector(std::string name, std::vector<event_t> event_table, std::function<void()> handler, unsigned int delay_msec = 0)
-		    : delay_msec_(delay_msec)
+		    : current_state_(state::initial)
+		    , delay_msec_(delay_msec)
 		    , event_table_(event_table)
 		    , handler_(handler)
 		    , name_(name)
@@ -147,25 +149,45 @@ namespace sepd
 		void evalate_event(int event, int elapsed)
 		{
 			auto timing = event_table_[next_step()];
-			std::weak_ptr<detector> weak_this = this->shared_from_this();
-			timing.acceptable(event, elapsed, [=](bool result) {
-				if (auto shared_this = weak_this.lock()) {
-					if (shared_this->current_state_ != detector::state::detecting) {
-						return;
-					}
-					util::print_log(&shared_this, shared_this->name_ + "=> result");
-					if (result == false) {
-						// failed
-						util::print_log(&shared_this, shared_this->name_ + "=> failed");
-						shared_this->update_state(action::reject, event, elapsed);
+			switch (timing.event_behaviour()) {
+				case event_t::behaviour::discrete:
+					if (timing.acceptable(event, elapsed)) {
+						util::print_log(this, name_ + "=> accept");
+						update_state(action::accept, event, elapsed);
 					}
 					else {
-						// go ahead
-						util::print_log(&shared_this, shared_this->name_ + "=> go ahead");
-						shared_this->update_state(action::accept, event, elapsed);
+						util::print_log(this, name_ + "=> failed");
+						update_state(action::reject, event, elapsed);
 					}
-				}
-			});
+					break;
+				case event_t::behaviour::continuous:
+					if (timing.acceptable_event(event)) {
+						std::weak_ptr<detector> weak_this = this->shared_from_this();
+						auto duration = std::chrono::milliseconds { timing.end_msec() };
+						std::thread t([=] {
+							std::this_thread::sleep_for(duration);
+							if (auto shared_this = weak_this.lock()) {
+								auto current_time = std::chrono::system_clock::now();
+								auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_event_time_).count();
+								util::print_log(&shared_this, shared_this->name_ + "=> continuous: elapsed " + std::to_string(elapsed) + "[ms]");
+								if (elapsed >= duration.count()) {
+									util::print_log(&shared_this, shared_this->name_ + "=> accept");
+									shared_this->update_state(action::accept, event, elapsed);
+								}
+								else {
+									util::print_log(&shared_this, shared_this->name_ + "=> failed");
+									shared_this->update_state(action::reject, event, elapsed);
+								}
+							}
+						});
+						t.detach();
+					}
+					else {
+						update_state(action::reject, event, elapsed);
+					}
+
+					break;
+			}
 		}
 
 		detector::state detect_state(int step, int completion_step)
@@ -278,6 +300,7 @@ namespace sepd
 
 		void input(int event)
 		{
+			util::print_log(this, name_ + "=> input " + std::to_string(event));
 			auto current_time = std::chrono::system_clock::now();
 			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_event_time_).count();
 			switch (current_state_) {
