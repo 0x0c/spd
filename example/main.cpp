@@ -1,10 +1,10 @@
-#define SEPD_DEBUG 1
+#define SPD_DEBUG 1
 
 #include <iostream>
 #include <vector>
 
 #include <chrono>
-#include <sepd.h>
+#include <spd.h>
 
 using namespace m2d;
 
@@ -17,60 +17,60 @@ enum event
 int main(int argc, char *argv[])
 {
 	auto detectors = {
-		sepd::detector::create(
+		spd::detector::create(
 		    "1",
-		    { sepd::event_t(key_pressed, 500, sepd::event_t::behaviour::continuous) },
+		    { spd::pattern_t(key_pressed, 500, spd::pattern_t::behaviour::continuous) },
 		    [] {
 		        std::cout << "detect long" << std::endl;
 		    },
 		    200),
-		sepd::detector::create(
+		spd::detector::create(
 		    "1",
-		    { sepd::event_t(key_pressed),
-		        sepd::event_t(key_release, 200) },
+		    { spd::pattern_t(key_pressed),
+		        spd::pattern_t(key_release, 200) },
 		    [] {
 		        std::cout << "detected 1" << std::endl;
 		    },
 		    200),
-		sepd::detector::create(
+		spd::detector::create(
 		    "2",
-		    { sepd::event_t(key_pressed),
-		        sepd::event_t(key_release, 200),
-		        sepd::event_t(key_pressed, 200),
-		        sepd::event_t(key_release, 200) },
+		    { spd::pattern_t(key_pressed),
+		        spd::pattern_t(key_release, 200),
+		        spd::pattern_t(key_pressed, 200),
+		        spd::pattern_t(key_release, 200) },
 		    [] {
 		        std::cout << "detected 2" << std::endl;
 		    },
 		    200),
-		sepd::detector::create(
+		spd::detector::create(
 		    "3",
-		    { sepd::event_t(key_pressed),
-		        sepd::event_t(key_release, 200),
-		        sepd::event_t(key_pressed, 200),
-		        sepd::event_t(key_release, 200),
-		        sepd::event_t(key_pressed, 200),
-		        sepd::event_t(key_release, 200) },
+		    { spd::pattern_t(key_pressed),
+		        spd::pattern_t(key_release, 200),
+		        spd::pattern_t(key_pressed, 200),
+		        spd::pattern_t(key_release, 200),
+		        spd::pattern_t(key_pressed, 200),
+		        spd::pattern_t(key_release, 200) },
 		    [] {
 		        std::cout << "detected 3" << std::endl;
 		    },
 		    200),
-		sepd::detector::create(
+		spd::detector::create(
 		    "4",
-		    { sepd::event_t(key_pressed),
-		        sepd::event_t(key_release, 200),
-		        sepd::event_t(key_pressed, 200),
-		        sepd::event_t(key_release, 200),
-		        sepd::event_t(key_pressed, 200),
-		        sepd::event_t(key_release, 200),
-		        sepd::event_t(key_pressed, 200),
-		        sepd::event_t(key_release, 200) },
+		    { spd::pattern_t(key_pressed),
+		        spd::pattern_t(key_release, 200),
+		        spd::pattern_t(key_pressed, 200),
+		        spd::pattern_t(key_release, 200),
+		        spd::pattern_t(key_pressed, 200),
+		        spd::pattern_t(key_release, 200),
+		        spd::pattern_t(key_pressed, 200),
+		        spd::pattern_t(key_release, 200) },
 		    [] {
 		        std::cout << "detected 4" << std::endl;
 		    },
 		    200)
 	};
 
-	sepd::decetor_group group(detectors);
+	spd::decetor_group group(detectors);
 
 	std::cout << "start" << std::endl;
 	std::istream::char_type ch;

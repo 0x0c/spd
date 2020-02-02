@@ -1,3 +1,3 @@
-# sepd
+# spd
 
-sequential event pattern detector
+sequential pattern detector

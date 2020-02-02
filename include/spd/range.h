@@ -2,7 +2,7 @@
 
 namespace m2d
 {
-namespace sepd
+namespace spd
 {
 	class range_t
 	{

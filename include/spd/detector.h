@@ -5,12 +5,12 @@
 #include <functional>
 #include <thread>
 
-#include "event.h"
+#include "pattern.h"
 #include "util.h"
 
 namespace m2d
 {
-namespace sepd
+namespace spd
 {
 	class sequence
 	{
@@ -109,15 +109,15 @@ namespace sepd
 		sequence seq_;
 		state current_state_;
 		unsigned int delay_msec_ = 0;
-		std::chrono::system_clock::time_point last_event_time_;
-		std::vector<event_t> event_table_;
+		std::chrono::system_clock::time_point last_update_time_;
+		std::vector<pattern_t> pattern_table_;
 		std::function<void()> handler_;
 		std::string name_ = "";
 
-		detector(std::string name, std::vector<event_t> event_table, std::function<void()> handler, unsigned int delay_msec = 0)
+		detector(std::string name, std::vector<pattern_t> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
 		    : current_state_(state::initial)
 		    , delay_msec_(delay_msec)
-		    , event_table_(event_table)
+		    , pattern_table_(pattern_table)
 		    , handler_(handler)
 		    , name_(name)
 		{
@@ -137,7 +137,7 @@ namespace sepd
 					auto shared_this = weak_this.lock();
 					if (shared_this && shared_this->current_state_ == detector::state::activated) {
 						auto current_time = std::chrono::system_clock::now();
-						auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_event_time_).count();
+						auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_update_time_).count();
 						util::print_log(&shared_this, shared_this->name_ + "=> handler elapsed: delay " + std::to_string(elapsed) + "[ms]");
 						shared_this->handler_();
 					}
@@ -146,44 +146,44 @@ namespace sepd
 			}
 		}
 
-		void evalate_event(int event, int elapsed)
+		void evalate_event(int pattern, int elapsed)
 		{
-			auto timing = event_table_[next_step()];
-			switch (timing.event_behaviour()) {
-				case event_t::behaviour::discrete:
-					if (timing.acceptable(event, elapsed)) {
+			auto timing = pattern_table_[next_step()];
+			switch (timing.pattern_behaviour()) {
+				case pattern_t::behaviour::discrete:
+					if (timing.acceptable(pattern, elapsed)) {
 						util::print_log(this, name_ + "=> accept");
-						update_state(action::accept, event, elapsed);
+						update_state(action::accept, pattern, elapsed);
 					}
 					else {
 						util::print_log(this, name_ + "=> failed");
-						update_state(action::reject, event, elapsed);
+						update_state(action::reject, pattern, elapsed);
 					}
 					break;
-				case event_t::behaviour::continuous:
-					if (timing.acceptable_event(event)) {
+				case pattern_t::behaviour::continuous:
+					if (timing.acceptable_pattern(pattern)) {
 						std::weak_ptr<detector> weak_this = this->shared_from_this();
 						auto duration = std::chrono::milliseconds { timing.end_msec() };
 						std::thread t([=] {
 							std::this_thread::sleep_for(duration);
 							if (auto shared_this = weak_this.lock()) {
 								auto current_time = std::chrono::system_clock::now();
-								auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_event_time_).count();
+								auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_update_time_).count();
 								util::print_log(&shared_this, shared_this->name_ + "=> continuous: elapsed " + std::to_string(elapsed) + "[ms]");
 								if (elapsed >= duration.count()) {
 									util::print_log(&shared_this, shared_this->name_ + "=> accept");
-									shared_this->update_state(action::accept, event, elapsed);
+									shared_this->update_state(action::accept, pattern, elapsed);
 								}
 								else {
 									util::print_log(&shared_this, shared_this->name_ + "=> failed");
-									shared_this->update_state(action::reject, event, elapsed);
+									shared_this->update_state(action::reject, pattern, elapsed);
 								}
 							}
 						});
 						t.detach();
 					}
 					else {
-						update_state(action::reject, event, elapsed);
+						update_state(action::reject, pattern, elapsed);
 					}
 
 					break;
@@ -230,7 +230,7 @@ namespace sepd
 					}
 					break;
 				case detector::state::checking:
-					change_state(detect_state(seq_.current_step(), event_table_.size() - 1));
+					change_state(detect_state(seq_.current_step(), pattern_table_.size() - 1));
 					update_state(action::eval, event, elapsed);
 					break;
 				case detector::state::in_progress:
@@ -281,9 +281,9 @@ namespace sepd
 		}
 
 	public:
-		static std::shared_ptr<detector> create(std::string name, std::vector<event_t> event_table, std::function<void()> handler, unsigned int delay_msec = 0)
+		static std::shared_ptr<detector> create(std::string name, std::vector<pattern_t> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
 		{
-			auto d = new detector(name, event_table, handler, delay_msec);
+			auto d = new detector(name, pattern_table, handler, delay_msec);
 			return std::shared_ptr<detector>(std::move(d));
 		}
 
@@ -302,7 +302,7 @@ namespace sepd
 		{
 			util::print_log(this, name_ + "=> input " + std::to_string(event));
 			auto current_time = std::chrono::system_clock::now();
-			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_event_time_).count();
+			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_update_time_).count();
 			switch (current_state_) {
 				case detector::state::initial:
 					update_state(action::touch, event, elapsed);
@@ -339,7 +339,7 @@ namespace sepd
 				default:
 					break;
 			}
-			last_event_time_ = std::chrono::system_clock::now();
+			last_update_time_ = std::chrono::system_clock::now();
 		}
 
 		int current_step()
