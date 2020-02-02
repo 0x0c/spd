@@ -184,67 +184,6 @@ namespace sepd
 			}
 		}
 
-	public:
-		static std::shared_ptr<detector> create(std::string name, std::vector<event_t> event_table, std::function<void()> handler, unsigned int delay_msec = 0)
-		{
-			auto d = new detector(name, event_table, handler, delay_msec);
-			return std::shared_ptr<detector>(std::move(d));
-		}
-
-		detector::state change_state(detector::state state)
-		{
-			util::print_log(this, name_ + "=> change state " + detector::to_string(state));
-			if (state == detector::state::initial) {
-				reset_sequence();
-			}
-
-			current_state_ = state;
-			return current_state_;
-		}
-
-		void receive(int event)
-		{
-			auto current_time = std::chrono::system_clock::now();
-			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_event_time_).count();
-			switch (current_state_) {
-				case detector::state::initial:
-					update_state(action::touch, event, elapsed);
-					break;
-				case detector::state::detecting:
-					// when receive event during detecting state,
-					// change state to invalid
-					change_state(detector::state::invalid);
-					break;
-				case detector::state::in_progress:
-					if (delay_msec_ < elapsed) {
-						// expire
-						update_state(action::expire, event, elapsed);
-					}
-					else {
-						update_state(action::touch, event, elapsed);
-					}
-					break;
-				case detector::state::activated:
-					if (delay_msec_ < elapsed) {
-						// expire
-						update_state(action::expire, event, elapsed);
-					}
-					else {
-						update_state(action::touch, event, elapsed);
-					}
-					break;
-				case detector::state::invalid:
-					if (delay_msec_ < elapsed) {
-						// expire
-						update_state(action::expire, event, elapsed);
-					}
-					break;
-				default:
-					break;
-			}
-			last_event_time_ = std::chrono::system_clock::now();
-		}
-
 		void update_state(detector::action action, int event, int elapsed)
 		{
 			util::print_log(this, name_ + "=> update state: current = " + detector::to_string(current_state_) + ", action = " + detector::to_string(action) + ", elapsed = " + std::to_string(elapsed) + "[ms]");
@@ -308,16 +247,6 @@ namespace sepd
 			update_state(action::touch, event, elapsed);
 		}
 
-		int current_step()
-		{
-			return seq_.current_step();
-		}
-
-		int next_step()
-		{
-			return seq_.next_step();
-		}
-
 		void go_next_sequence()
 		{
 			seq_.go_next();
@@ -326,6 +255,77 @@ namespace sepd
 		void reset_sequence()
 		{
 			seq_.reset();
+		}
+
+	public:
+		static std::shared_ptr<detector> create(std::string name, std::vector<event_t> event_table, std::function<void()> handler, unsigned int delay_msec = 0)
+		{
+			auto d = new detector(name, event_table, handler, delay_msec);
+			return std::shared_ptr<detector>(std::move(d));
+		}
+
+		detector::state change_state(detector::state state)
+		{
+			util::print_log(this, name_ + "=> change state " + detector::to_string(state));
+			if (state == detector::state::initial) {
+				reset_sequence();
+			}
+
+			current_state_ = state;
+			return current_state_;
+		}
+
+		void input(int event)
+		{
+			auto current_time = std::chrono::system_clock::now();
+			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_event_time_).count();
+			switch (current_state_) {
+				case detector::state::initial:
+					update_state(action::touch, event, elapsed);
+					break;
+				case detector::state::detecting:
+					// when receive event during detecting state,
+					// change state to invalid
+					change_state(detector::state::invalid);
+					break;
+				case detector::state::in_progress:
+					if (delay_msec_ < elapsed) {
+						// expire
+						update_state(action::expire, event, elapsed);
+					}
+					else {
+						update_state(action::touch, event, elapsed);
+					}
+					break;
+				case detector::state::activated:
+					if (delay_msec_ < elapsed) {
+						// expire
+						update_state(action::expire, event, elapsed);
+					}
+					else {
+						update_state(action::touch, event, elapsed);
+					}
+					break;
+				case detector::state::invalid:
+					if (delay_msec_ < elapsed) {
+						// expire
+						update_state(action::expire, event, elapsed);
+					}
+					break;
+				default:
+					break;
+			}
+			last_event_time_ = std::chrono::system_clock::now();
+		}
+
+		int current_step()
+		{
+			return seq_.current_step();
+		}
+
+		int next_step()
+		{
+			return seq_.next_step();
 		}
 	};
 
@@ -340,10 +340,10 @@ namespace sepd
 		{
 		}
 
-		void touch(int event)
+		void input(int event)
 		{
 			for (auto d : detectors_) {
-				d->receive(event);
+				d->input(event);
 			}
 		}
 	};
