@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "range.h"
+#include "util.h"
 
 namespace m2d
 {
@@ -25,6 +26,7 @@ namespace sepd
 
 		bool acceptable(int event_type, unsigned int duration)
 		{
+			util::print_log(this, "acceptable: contain = " + std::to_string(interval_.contains(duration)) + ", type = " + std::to_string(event_type_ == event_type));
 			return interval_.contains(duration) && event_type_ == event_type;
 		}
 
