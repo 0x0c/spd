@@ -11,32 +11,92 @@ namespace m2d
 {
 namespace sepd
 {
-	class detector : public std::enable_shared_from_this<detector>
+	class sequence
 	{
 	public:
 		enum state
 		{
+			initial,
 			in_progress,
 			invalid,
 			activated
 		};
 
-		static std::string to_string(state s)
+	private:
+		int step_ = -1;
+		int completion_step_ = -1;
+
+	public:
+		static std::string to_string(sequence::state s)
 		{
 			switch (s) {
-				case detector::state::in_progress:
+				case sequence::initial:
+					return "initial";
+				case sequence::state::in_progress:
 					return "in_progress";
-				case detector::state::invalid:
+				case sequence::state::invalid:
 					return "invalid";
-				case detector::state::activated:
+				case sequence::state::activated:
 					return "activated";
 				default:
 					return "undefined";
 			}
 		}
 
+		sequence(int completion_step)
+		    : completion_step_(completion_step)
+		{
+			reset();
+		}
+
+		int next_step()
+		{
+			return step_ + 1;
+		}
+
+		int previous_step()
+		{
+			return std::max(-1, step_ - 1);
+		}
+
+		void go_next()
+		{
+			step_++;
+		}
+
+		void reset()
+		{
+			step_ = -1;
+		}
+
+		int current_step()
+		{
+			return step_;
+		}
+
+		state current_state()
+		{
+			if (step_ == completion_step_) {
+				// util::print_log(this, "activated");
+				return state::activated;
+			}
+			else if (step_ > completion_step_) {
+				// util::print_log(this, "invalid");
+				return state::invalid;
+			}
+			else if (step_ == -1) {
+				return state::initial;
+			}
+
+			// util::print_log(this, "in_progress");
+			return state::in_progress;
+		}
+	};
+
+	class detector : public std::enable_shared_from_this<detector>
+	{
 	private:
-		int sequence_ = -1;
+		sequence seq_;
 		unsigned int delay_msec_ = 0;
 		std::chrono::system_clock::time_point last_event_time_;
 		std::vector<event_t> event_table_;
@@ -45,16 +105,17 @@ namespace sepd
 
 		void go_next_sequence()
 		{
-			sequence_++;
+			seq_.go_next();
 		}
 
 		int current_sequence()
 		{
-			return sequence_;
+			return seq_.current_state();
 		}
 
 		detector(std::string name, std::vector<event_t> event_table, std::function<void()> handler, unsigned int delay_msec = 0)
-		    : delay_msec_(delay_msec)
+		    : seq_(sequence(event_table.size() - 1))
+		    , delay_msec_(delay_msec)
 		    , event_table_(event_table)
 		    , handler_(handler)
 		    , name_(name)
@@ -62,9 +123,9 @@ namespace sepd
 			reset_sequence();
 		}
 
-		void dispatch(state state, unsigned int delay_msec)
+		void dispatch(sequence::state state, unsigned int delay_msec)
 		{
-			if (state == state::activated) {
+			if (state == sequence::state::activated) {
 				if (delay_msec == 0) {
 					handler_();
 				}
@@ -87,7 +148,7 @@ namespace sepd
 
 		bool is_valid()
 		{
-			return current_state() == state::in_progress;
+			return current_state() == sequence::state::in_progress || current_state() == sequence::state::initial;
 		}
 
 	public:
@@ -99,17 +160,21 @@ namespace sepd
 
 		void reset_sequence()
 		{
-			sequence_ = -1;
+			seq_.reset();
+		}
+
+		int next_step()
+		{
+			return seq_.next_step();
 		}
 
 		void touch(int event)
 		{
 			auto current_time = std::chrono::system_clock::now();
 			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_event_time_).count();
-			int next_sequence = current_sequence() + 1;
 
-			util::print_log(this, this->name_ + "=> state: " + detector::to_string(current_state()) + ", " + std::to_string(elapsed) + "[ms]");
-			util::print_log(this, this->name_ + "=> sequence: " + std::to_string(current_sequence()));
+			util::print_log(this, this->name_ + "=> current state: " + sequence::to_string(current_state()) + ", " + std::to_string(elapsed) + "[ms]");
+			util::print_log(this, this->name_ + "=> current sequence: " + std::to_string(current_sequence()));
 
 			if (is_valid() == false) {
 				util::print_log(this, this->name_ + "=> invalid");
@@ -117,7 +182,6 @@ namespace sepd
 					// down time finished
 					util::print_log(this, this->name_ + "=> down time finished, reset sequence");
 					reset_sequence();
-					next_sequence = current_sequence() + 1;
 				}
 				else {
 					// still down time
@@ -130,13 +194,12 @@ namespace sepd
 				// down time finished
 				util::print_log(this, this->name_ + "=> expired, reset sequence");
 				reset_sequence();
-				next_sequence = current_sequence() + 1;
 			}
 
 			if (is_valid()) {
 				// check
-				util::print_log(this, this->name_ + "=> check: next seq " + std::to_string(next_sequence));
-				auto timing = event_table_[next_sequence];
+				util::print_log(this, this->name_ + "=> check: next seq " + std::to_string(next_step()));
+				auto timing = event_table_[next_step()];
 
 				std::weak_ptr<detector> weak_this = this->shared_from_this();
 				timing.acceptable(event, elapsed, [=](bool result) {
@@ -156,7 +219,7 @@ namespace sepd
 						auto delay = shared_this->delay_msec_;
 						shared_this->dispatch(s, delay);
 
-						util::print_log(&shared_this, shared_this->name_ + "=> current state: " + detector::to_string(shared_this->current_state()));
+						util::print_log(&shared_this, shared_this->name_ + "=> current state: " + sequence::to_string(shared_this->current_state()));
 						util::print_log(&shared_this, shared_this->name_ + "=> current sequence: " + std::to_string(shared_this->current_sequence()));
 					}
 				});
@@ -164,20 +227,9 @@ namespace sepd
 			last_event_time_ = std::chrono::system_clock::now();
 		}
 
-		state current_state()
+		sequence::state current_state()
 		{
-			int table_size = event_table_.size();
-			if (sequence_ == table_size - 1) {
-				// util::print_log(this, "activated");
-				return state::activated;
-			}
-			else if (sequence_ > table_size - 1) {
-				// util::print_log(this, "invalid");
-				return state::invalid;
-			}
-
-			// util::print_log(this, "in_progress");
-			return state::in_progress;
+			return seq_.current_state();
 		}
 	};
 
