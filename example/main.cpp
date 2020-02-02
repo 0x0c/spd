@@ -10,18 +10,35 @@ using namespace m2d;
 
 enum event
 {
-	key_pressed,
-	key_release
+	key_release,
+	key_pressed
 };
 
 int main(int argc, char *argv[])
 {
 	auto detectors = {
 		spd::detector::create(
-		    "1",
+		    "long",
 		    { spd::pattern_t(key_pressed, 500, spd::pattern_t::behaviour::continuous) },
 		    [] {
 		        std::cout << "detect long" << std::endl;
+		    },
+		    200),
+		spd::detector::create(
+		    "shor-long-short",
+		    {
+		        // short
+		        spd::pattern_t(key_pressed),
+		        spd::pattern_t(key_release, 200),
+		        //long
+		        spd::pattern_t(key_pressed, 500, spd::pattern_t::behaviour::continuous),
+		        spd::pattern_t(key_release, 200),
+		        //short
+		        spd::pattern_t(key_pressed, 200),
+		        spd::pattern_t(key_release, 200),
+		    },
+		    [] {
+		        std::cout << "detect short-long-short" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
@@ -76,8 +93,25 @@ int main(int argc, char *argv[])
 	std::istream::char_type ch;
 	while ((ch = std::cin.get()) != 'q') {
 		if (ch == 'z') {
-			// long press
+			// long
 			group.input(key_pressed);
+		}
+		else if (ch == 'x') {
+			// short-long-short
+			// short
+			group.input(key_pressed);
+			std::this_thread::sleep_for(std::chrono::milliseconds { 100 });
+			group.input(key_release);
+
+			// long
+			group.input(key_pressed);
+			std::this_thread::sleep_for(std::chrono::milliseconds { 510 });
+			group.input(key_release);
+
+			// short
+			group.input(key_pressed);
+			std::this_thread::sleep_for(std::chrono::milliseconds { 100 });
+			group.input(key_release);
 		}
 		else if (ch == '1') {
 			// 1
