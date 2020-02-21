@@ -10,7 +10,7 @@ namespace m2d
 {
 namespace spd
 {
-	class pattern_t
+	class pattern
 	{
 	public:
 		enum behaviour
@@ -21,18 +21,18 @@ namespace spd
 
 	private:
 		int pattern_;
-		range_t interval_;
+		range interval_;
 		behaviour accteptable_behaviour_ = discrete;
 
 	public:
-		pattern_t(int pattern, range_t interval, pattern_t::behaviour accteptable_behaviour = behaviour::discrete)
+		pattern(int pattern, range interval, pattern::behaviour accteptable_behaviour = behaviour::discrete)
 		    : pattern_(pattern)
 		    , interval_(interval)
 		    , accteptable_behaviour_(accteptable_behaviour)
 		{
 		}
 
-		pattern_t(int pattern)
+		pattern(int pattern)
 		    : pattern_(pattern)
 		    , accteptable_behaviour_(behaviour::discrete)
 		{

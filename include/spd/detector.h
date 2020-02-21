@@ -110,11 +110,11 @@ namespace spd
 		state current_state_;
 		unsigned int delay_msec_ = 0;
 		std::atomic<std::chrono::system_clock::time_point> last_update_time_;
-		std::vector<pattern_t> pattern_table_;
+		std::vector<pattern> pattern_table_;
 		std::function<void()> handler_;
 		std::string name_ = "";
 
-		detector(std::string name, std::vector<pattern_t> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
+		detector(std::string name, std::vector<pattern> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
 		    : current_state_(state::initial)
 		    , delay_msec_(delay_msec)
 		    , pattern_table_(pattern_table)
@@ -150,7 +150,7 @@ namespace spd
 		{
 			auto timing = pattern_table_[next_step()];
 			switch (timing.pattern_behaviour()) {
-				case pattern_t::behaviour::discrete:
+				case pattern::behaviour::discrete:
 					if (timing.acceptable(pattern, elapsed)) {
 						util::print_log(this, name_ + "=> accept");
 						update_state(action::accept, pattern, elapsed);
@@ -160,7 +160,7 @@ namespace spd
 						update_state(action::reject, pattern, elapsed);
 					}
 					break;
-				case pattern_t::behaviour::continuous:
+				case pattern::behaviour::continuous:
 					if (timing.acceptable_pattern(pattern) && (timing.start_msec() == 0 || timing.start_msec() > elapsed)) {
 						std::weak_ptr<detector> weak_this = this->shared_from_this();
 						auto duration = std::chrono::milliseconds { timing.end_msec() };
@@ -293,7 +293,7 @@ namespace spd
 		}
 
 	public:
-		static std::shared_ptr<detector> create(std::string name, std::vector<pattern_t> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
+		static std::shared_ptr<detector> create(std::string name, std::vector<pattern> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
 		{
 			auto d = new detector(name, pattern_table, handler, delay_msec);
 			return std::shared_ptr<detector>(std::move(d));
