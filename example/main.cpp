@@ -19,70 +19,70 @@ int main(int argc, char *argv[])
 	auto detectors = {
 		spd::detector::create(
 		    "long",
-		    { spd::pattern_t(key_pressed, 500, spd::pattern_t::behaviour::continuous) },
+		    { spd::pattern(key_pressed, 500, spd::pattern::behaviour::continuous) },
 		    [] {
-		        std::cout << "detect long" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detect long" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
 		    "shor-long-short",
 		    {
 		        // short
-		        spd::pattern_t(key_pressed),
-		        spd::pattern_t(key_release, 200),
+		        spd::pattern(key_pressed),
+		        spd::pattern(key_release, 200),
 		        //long
-		        spd::pattern_t(key_pressed, 500, spd::pattern_t::behaviour::continuous),
-		        spd::pattern_t(key_release, 200),
+		        spd::pattern(key_pressed, 500, spd::pattern::behaviour::continuous),
+		        spd::pattern(key_release, 200),
 		        //short
-		        spd::pattern_t(key_pressed, 200),
-		        spd::pattern_t(key_release, 200),
+		        spd::pattern(key_pressed, 200),
+		        spd::pattern(key_release, 200),
 		    },
 		    [] {
-		        std::cout << "detect short-long-short" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detect short-long-short" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
 		    "1",
-		    { spd::pattern_t(key_pressed),
-		        spd::pattern_t(key_release, 200) },
+		    { spd::pattern(key_pressed),
+		        spd::pattern(key_release, 200) },
 		    [] {
-		        std::cout << "detected 1" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detected 1" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
 		    "2",
-		    { spd::pattern_t(key_pressed),
-		        spd::pattern_t(key_release, 200),
-		        spd::pattern_t(key_pressed, 200),
-		        spd::pattern_t(key_release, 200) },
+		    { spd::pattern(key_pressed),
+		        spd::pattern(key_release, 200),
+		        spd::pattern(key_pressed, 200),
+		        spd::pattern(key_release, 200) },
 		    [] {
-		        std::cout << "detected 2" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detected 2" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
 		    "3",
-		    { spd::pattern_t(key_pressed),
-		        spd::pattern_t(key_release, 200),
-		        spd::pattern_t(key_pressed, 200),
-		        spd::pattern_t(key_release, 200),
-		        spd::pattern_t(key_pressed, 200),
-		        spd::pattern_t(key_release, 200) },
+		    { spd::pattern(key_pressed),
+		        spd::pattern(key_release, 200),
+		        spd::pattern(key_pressed, 200),
+		        spd::pattern(key_release, 200),
+		        spd::pattern(key_pressed, 200),
+		        spd::pattern(key_release, 200) },
 		    [] {
-		        std::cout << "detected 3" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detected 3" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
 		    "4",
-		    { spd::pattern_t(key_pressed),
-		        spd::pattern_t(key_release, 200),
-		        spd::pattern_t(key_pressed, 200),
-		        spd::pattern_t(key_release, 200),
-		        spd::pattern_t(key_pressed, 200),
-		        spd::pattern_t(key_release, 200),
-		        spd::pattern_t(key_pressed, 200),
-		        spd::pattern_t(key_release, 200) },
+		    { spd::pattern(key_pressed),
+		        spd::pattern(key_release, 200),
+		        spd::pattern(key_pressed, 200),
+		        spd::pattern(key_release, 200),
+		        spd::pattern(key_pressed, 200),
+		        spd::pattern(key_release, 200),
+		        spd::pattern(key_pressed, 200),
+		        spd::pattern(key_release, 200) },
 		    [] {
-		        std::cout << "detected 4" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detected 4" << std::endl;
 		    },
 		    200)
 	};

@@ -4,7 +4,7 @@ namespace m2d
 {
 namespace spd
 {
-	class range_t
+	class range
 	{
 		unsigned int start_msec_ = 0;
 		unsigned int end_msec_ = 0;
@@ -19,18 +19,18 @@ namespace spd
 			return end_msec_;
 		}
 
-		range_t(unsigned int start_msec, unsigned int end_msec)
+		range(unsigned int start_msec, unsigned int end_msec)
 		    : start_msec_(start_msec)
 		    , end_msec_(end_msec)
 		{
 		}
 
-		range_t(unsigned int value)
+		range(unsigned int value)
 		    : end_msec_(value)
 		{
 		}
 
-		range_t()
+		range()
 		    : start_msec_(0)
 		    , end_msec_(0)
 		{

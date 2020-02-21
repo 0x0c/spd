@@ -12,7 +12,7 @@ namespace spd
 		static void print_log(void *instance, std::string str)
 		{
 #ifdef SPD_DEBUG
-			printf("[%p] %s\n", instance, str.c_str());
+			std::cout << std::this_thread::get_id() << "\t [" << instance << "] \t" << str << std::endl;
 #endif
 		}
 	};

@@ -109,12 +109,12 @@ namespace spd
 		sequence seq_;
 		state current_state_;
 		unsigned int delay_msec_ = 0;
-		std::chrono::system_clock::time_point last_update_time_;
-		std::vector<pattern_t> pattern_table_;
+		std::atomic<std::chrono::system_clock::time_point> last_update_time_;
+		std::vector<pattern> pattern_table_;
 		std::function<void()> handler_;
 		std::string name_ = "";
 
-		detector(std::string name, std::vector<pattern_t> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
+		detector(std::string name, std::vector<pattern> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
 		    : current_state_(state::initial)
 		    , delay_msec_(delay_msec)
 		    , pattern_table_(pattern_table)
@@ -137,8 +137,8 @@ namespace spd
 					auto shared_this = weak_this.lock();
 					if (shared_this && shared_this->current_state_ == detector::state::activated) {
 						auto current_time = std::chrono::system_clock::now();
-						auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_update_time_).count();
-						util::print_log(&shared_this, shared_this->name_ + "=> handler elapsed: delay " + std::to_string(elapsed) + "[ms]");
+						auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_update_time()).count();
+						util::print_log(&shared_this, shared_this->name_ + "=> handler call: delay " + std::to_string(elapsed) + "[ms]");
 						shared_this->handler_();
 					}
 				});
@@ -150,7 +150,7 @@ namespace spd
 		{
 			auto timing = pattern_table_[next_step()];
 			switch (timing.pattern_behaviour()) {
-				case pattern_t::behaviour::discrete:
+				case pattern::behaviour::discrete:
 					if (timing.acceptable(pattern, elapsed)) {
 						util::print_log(this, name_ + "=> accept");
 						update_state(action::accept, pattern, elapsed);
@@ -160,15 +160,15 @@ namespace spd
 						update_state(action::reject, pattern, elapsed);
 					}
 					break;
-				case pattern_t::behaviour::continuous:
-					if (timing.acceptable_pattern(pattern)) {
+				case pattern::behaviour::continuous:
+					if (timing.acceptable_pattern(pattern) && (timing.start_msec() == 0 || timing.start_msec() > elapsed)) {
 						std::weak_ptr<detector> weak_this = this->shared_from_this();
 						auto duration = std::chrono::milliseconds { timing.end_msec() };
 						std::thread t([=] {
 							std::this_thread::sleep_for(duration);
 							if (auto shared_this = weak_this.lock()) {
 								auto current_time = std::chrono::system_clock::now();
-								auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_update_time_).count();
+								auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - shared_this->last_update_time()).count();
 								util::print_log(&shared_this, shared_this->name_ + "=> continuous: elapsed " + std::to_string(elapsed) + "[ms]");
 								if (elapsed >= duration.count()) {
 									util::print_log(&shared_this, shared_this->name_ + "=> accept");
@@ -221,13 +221,13 @@ namespace spd
 						change_state(state::invalid);
 					}
 					else if (action == action::accept) {
-						last_update_time_ = std::chrono::system_clock::now();
+						set_last_update_time(std::chrono::system_clock::now());
 						go_next_sequence();
 						change_state(state::checking);
 						update_state(action, event, elapsed);
 					}
 					else if (action == action::reject) {
-						last_update_time_ = std::chrono::system_clock::now();
+						set_last_update_time(std::chrono::system_clock::now());
 						change_state(state::invalid);
 					}
 					break;
@@ -282,8 +282,18 @@ namespace spd
 			seq_.reset();
 		}
 
+		std::chrono::system_clock::time_point last_update_time()
+		{
+			return last_update_time_;
+		}
+
+		void set_last_update_time(std::chrono::system_clock::time_point time)
+		{
+			last_update_time_ = time;
+		}
+
 	public:
-		static std::shared_ptr<detector> create(std::string name, std::vector<pattern_t> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
+		static std::shared_ptr<detector> create(std::string name, std::vector<pattern> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
 		{
 			auto d = new detector(name, pattern_table, handler, delay_msec);
 			return std::shared_ptr<detector>(std::move(d));
@@ -304,7 +314,7 @@ namespace spd
 		{
 			util::print_log(this, name_ + "=> input " + std::to_string(event));
 			auto current_time = std::chrono::system_clock::now();
-			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_update_time_).count();
+			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_update_time()).count();
 			switch (current_state_) {
 				case detector::state::initial:
 					update_state(action::touch, event, elapsed);
