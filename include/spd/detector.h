@@ -117,6 +117,7 @@ namespace spd
 		detector(std::string name, std::vector<pattern> pattern_table, std::function<void()> handler, unsigned int delay_msec = 0)
 		    : current_state_(state::initial)
 		    , delay_msec_(delay_msec)
+		    , last_update_time_(std::chrono::system_clock::now())
 		    , pattern_table_(pattern_table)
 		    , handler_(handler)
 		    , name_(name)

@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 		    { spd::pattern(key_pressed),
 		        spd::pattern(key_release, 200) },
 		    [] {
-		        std::cout << ">>>>>>>>>>>> detected 1" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detect 1" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 		        spd::pattern(key_pressed, 200),
 		        spd::pattern(key_release, 200) },
 		    [] {
-		        std::cout << ">>>>>>>>>>>> detected 2" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detect 2" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 		        spd::pattern(key_pressed, 200),
 		        spd::pattern(key_release, 200) },
 		    [] {
-		        std::cout << ">>>>>>>>>>>> detected 3" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detect 3" << std::endl;
 		    },
 		    200),
 		spd::detector::create(
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 		        spd::pattern(key_pressed, 200),
 		        spd::pattern(key_release, 200) },
 		    [] {
-		        std::cout << ">>>>>>>>>>>> detected 4" << std::endl;
+		        std::cout << ">>>>>>>>>>>> detect 4" << std::endl;
 		    },
 		    200)
 	};
