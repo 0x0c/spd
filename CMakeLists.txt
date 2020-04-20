@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15.0)
 add_definitions("-Wall")
 set(CMAKE_CXX_STANDARD 11)
 
-project(spd VERSION 0.0.3 DESCRIPTION "sequential pattern detector")
+project(spd VERSION 0.0.4 DESCRIPTION "sequential pattern detector")
 add_library(spd INTERFACE)
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
